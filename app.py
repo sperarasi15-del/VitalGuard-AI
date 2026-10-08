@@ -559,89 +559,82 @@ if analyze_patient:
             "reference range."
         )
 
+# ============================================================
+# EXPLAINABLE ANOMALY RESULTS
+# ============================================================
 
-    # ========================================================
-    # EXPLAINABLE ANOMALIES
-    # ========================================================
+st.markdown("---")
+st.header("🔎 Explainable Anomaly Results")
 
-    st.markdown("---")
+if anomaly_count > 0:
 
-    st.header(
-        "🔎 Explainable Anomaly Results"
+    explanations = []
+
+    for timestamp in anomaly_data.index:
+
+        if timestamp in time_series.index:
+
+            row = time_series.loc[timestamp, vital_columns]
+
+            baseline_values = baseline[vital_columns]
+
+            spread_values = spread[vital_columns].replace(0, 1)
+
+            deviation = (
+                (row - baseline_values) /
+                spread_values
+            ).abs()
+
+            top_vitals = deviation.sort_values(
+                ascending=False
+            ).head(3)
+
+            explanation = ", ".join(
+                [
+                    f"{vital} ({value:.2f}σ)"
+                    for vital, value
+                    in top_vitals.items()
+                ]
+            )
+
+            explanations.append(
+                {
+                    "Time": timestamp,
+                    "Largest observed deviations":
+                        explanation
+                }
+            )
+
+    if explanations:
+
+        explanation_df = pd.DataFrame(
+            explanations
+        )
+
+        st.dataframe(
+            explanation_df,
+            hide_index=True,
+            width="stretch"
+        )
+
+        st.caption(
+            "These values show which vital signs had the "
+            "largest observed deviations from the patient's "
+            "calculated baseline. They indicate unusual "
+            "patterns and do not represent a medical diagnosis."
+        )
+
+    else:
+
+        st.info(
+            "No explainable anomaly details are available."
+        )
+
+else:
+
+    st.success(
+        "No unusual patterns were detected for this patient."
     )
-
-
-    deviation_score = time_series.attrs.get(
-        "deviation_score",
-        pd.DataFrame()
-    )
-
-
-    if (
-        anomaly_count > 0
-        and not deviation_score.empty
-    ):
-
-        explanations = []
-
-
-        for timestamp in anomaly_data.index:
-
-            if timestamp in deviation_score.index:
-
-                row = (
-                    deviation_score
-                    .loc[timestamp]
-                    .abs()
-                    .sort_values(
-                        ascending=False
-                    )
-                )
-
-
-                top_vitals = row.head(3)
-
-
-                explanation = ", ".join(
-                    [
-                        f"{vital} ({value:.2f}σ)"
-
-                        for vital, value
-                        in top_vitals.items()
-                    ]
-                )
-
-
-                explanations.append(
-                    {
-                        "Time": timestamp,
-
-                        "Largest observed deviations":
-                            explanation
-                    }
-                )
-
-
-        if explanations:
-
-            explanation_df = pd.DataFrame(
-                explanations
-            )
-
-
-            st.dataframe(
-                explanation_df,
-                use_container_width=True,
-                hide_index=True
-            )
-
-
-            st.caption(
-                "These vital signs showed the largest "
-                "observed deviations from the patient's "
-                "calculated baseline. They do not represent "
-                "a medical diagnosis."
-            )
 
 
     # ========================================================
