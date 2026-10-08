@@ -479,14 +479,48 @@ if analyze_patient:
 
 
     baseline = time_series.attrs.get(
-        "baseline",
-        pd.Series(dtype=float)
+    # Calculate baseline directly from patient data
+    vital_columns = [
+        column
+        for column in [
+            "HR",
+            "RespRate",
+            "SaO2",
+            "Temp",
+            "SysABP",
+            "DiasABP",
+            "NISysABP",
+            "NIDiasABP",
+            "NIMAP"
+        ]
+        if column in time_series.columns
+    ]
+
+    baseline = time_series[vital_columns].median()
+    spread = time_series[vital_columns].std()
+
+    baseline_table = pd.DataFrame({
+        "Vital Sign": vital_columns,
+        "Patient Baseline": [
+            baseline[vital]
+            for vital in vital_columns
+        ],
+        "Standard Deviation": [
+            spread[vital]
+            for vital in vital_columns
+        ]
+    })
+
+    st.dataframe(
+        baseline_table.round(2),
+        hide_index=True,
+        width="stretch"
     )
 
-
-    spread = time_series.attrs.get(
-        "spread",
-        pd.Series(dtype=float)
+    st.info(
+        "The baseline is calculated from the observed "
+        "values for this patient. It is not a clinical "
+        "reference range."
     )
 
 
