@@ -478,7 +478,7 @@ if analyze_patient:
     )
 
 
-    baseline = time_series.attrs.get(
+    baseline = time_series.attrs.get("baseline")
     # Calculate baseline directly from patient data
     vital_columns = [
         column
